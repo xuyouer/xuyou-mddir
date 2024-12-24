@@ -1,0 +1,22 @@
+{
+    "ignore": [
+        "node_modules",
+        ".git",
+        ".idea",
+        ".vscode",
+        "build",
+        "dist",
+        "__tests__",
+        "temp"
+    ],
+    "exclude": [
+        ".gitignore"
+    ],
+    "buildOptions": {
+        "keepIgnoredName": false,
+        "maxDepth": 5,
+        "outputFormat": "console",
+        "showFileSize": false,
+        "showIgnoredFileSize": false
+    }
+}
