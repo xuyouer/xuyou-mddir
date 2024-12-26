@@ -34,9 +34,11 @@ tree.generateTree();
 ```markdown
 xuyou-mddir/
 │
+├── .gitattributes
 ├── .gitignore
 ├── .ignore.json
 ├── .npmrc
+├── LICENSE
 ├── README.md
 ├── index.js
 ├── package-lock.json
@@ -79,7 +81,9 @@ xuyou-mddir/
     "maxDepth": 5,
     "outputFormat": "console",
     "showFileSize": false,
-    "showIgnoredFileSize": false
+    "showIgnoredFileSize": false,
+    "appendIgnore": true,
+    "appendExclude": true
   }
 }
 ```
@@ -91,7 +95,7 @@ const {Tree, generateTree} = require('xuyou-mddir')
 
 const options = {
     configFilePath: '',
-    ignoreDirs: ['node_modules', 'package.json', '__tests__'],
+    ignoreDirs: ['node_modules', 'package.json', '__tests__', '.git'],
     excludeDirs: [],
     buildOptions: {
         keepIgnoredName: true,
@@ -99,6 +103,8 @@ const options = {
         outputFormat: 'console',
         showFileSize: false,
         showIgnoredFileSize: false,
+        appendIgnore: false,
+        appendExclude: false,
     },
 }
 
@@ -113,9 +119,14 @@ tree.generateTree()
 ```markdown
 xuyou-mddir/
 │
+├── .git/
+│   └── ...
+│
+├── .gitattributes
 ├── .gitignore
 ├── .ignore.json
 ├── .npmrc
+├── LICENSE
 ├── README.md
 ├── __tests__/
 │   └── ...
@@ -143,11 +154,13 @@ xuyou-mddir/
   "ignore": ['customIgnore'],           # 忽略文件(目录)
   "exclude": ['customExclude'],         # 取消忽略文件(目录)
   "buildOptions" : {                    # 生成配置选项
-    "keepIgnoredName": Boolean,         # 忽略文件(目录)是否保留名称
-    "maxDepth": Number,                 # 树的生成最大深度
-    "outputFormat": "console",          # 输出格式选项
-    "showFileSize": Boolean,            # 显示文件(目录)大小
-    "showIgnoredFileSize": Boolean,     # 显示忽略文件(目录)大小
+    "keepIgnoredName": Boolean,         # 忽略文件(目录)是否保留名称, 默认 false
+    "maxDepth": Number,                 # 树的生成最大深度, 默认 5
+    "outputFormat": "console",          # 输出格式选项, 默认 console
+    "showFileSize": Boolean,            # 显示文件(目录)大小, 默认 false
+    "showIgnoredFileSize": Boolean,     # 显示忽略文件(目录)大小, 默认 false
+    "appendIgnore": Boolean,            # 是否追加忽略模式, 默认 true
+    "appendExclude": Boolean,           # 是否追加包含模式, 默认 true
     ...
   }
   ...
@@ -183,20 +196,23 @@ class Tree {
                 outputFormat: 'console',  // 输出方式
                 showFileSize: false,  // 显示文件大小
                 showIgnoredFileSize: false,  // 显示忽略文件大小
+                appendIgnore: true,  // 是否追加忽略
+                appendExclude: true,  // 是否追加包含
             },
         }
-        this._loadConfig()
-        this.options = {
-            ...this.options,  // 默认配置
-            ...options,  // 自定义配置
-        }
+        this._loadConfig()  // 读取配置
+        this._mergeConfig(options)  // 读取options
     }
 
     _loadConfig() {  // 读取配置信息
         ...
     }
 
-    generateTreeData(currentPath = null, level = 0, data = []) {  // 生成树形结构的 JSON 数据
+    _mergeConfig(config) {
+        ...
+    }
+
+    generateTreeData(currentPath = null, level = 0) {  // 生成树形结构的 JSON 数据
         ...
     }
 

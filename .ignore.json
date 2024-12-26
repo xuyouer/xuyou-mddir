@@ -17,6 +17,8 @@
         "maxDepth": 5,
         "outputFormat": "console",
         "showFileSize": false,
-        "showIgnoredFileSize": false
+        "showIgnoredFileSize": false,
+        "appendIgnore": true,
+        "appendExclude": true
     }
 }

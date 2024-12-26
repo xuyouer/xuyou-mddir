@@ -5,7 +5,7 @@ const { parse } = require('json5')
 
 if (require.main === module) {
     program
-        .version('0.1.0')
+        .version('0.1.50')
         .description(
             'Generate a directory tree in markdown format 生成项目结构树',
         )

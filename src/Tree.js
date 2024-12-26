@@ -24,13 +24,12 @@ class Tree {
                 outputFormat: 'console',
                 showFileSize: false,
                 showIgnoredFileSize: false,
+                appendIgnore: true,
+                appendExclude: true,
             },
         }
         this._loadConfig()
-        this.options = {
-            ...this.options,
-            ...options,
-        }
+        this._mergeConfig(options)
     }
 
     _loadConfig() {
@@ -55,38 +54,45 @@ class Tree {
     }
 
     _mergeConfig(config) {
-        if (config.ignore) {
-            this.options.ignoreDirs = [
-                ...this.options.ignoreDirs,
-                ...config.ignore,
-            ]
+        let { ignore, exclude, buildOptions } = config
+        ignore = ignore ? ignore : config.ignoreDirs
+        exclude = exclude ? exclude : config.excludeDirs
+        if (ignore) {
+            this.options.ignoreDirs = config.buildOptions?.appendIgnore
+                ? [...this.options.ignoreDirs, ...ignore]
+                : ignore
         }
-        if (config.exclude) {
-            this.options.excludeDirs = [
-                ...this.options.excludeDirs,
-                ...config.exclude,
-            ]
+        if (exclude) {
+            this.options.excludeDirs = config.buildOptions?.appendExclude
+                ? [...this.options.excludeDirs, ...exclude]
+                : exclude
         }
-        if (config.buildOptions) {
+        if (buildOptions) {
             this.options.buildOptions = {
                 ...this.options.buildOptions,
-                ...config.buildOptions,
+                ...buildOptions,
             }
         }
+
+        this.options.ignoreDirs = this._uniqueArray(this.options.ignoreDirs)
+        this.options.excludeDirs = this._uniqueArray(this.options.excludeDirs)
+    }
+
+    _uniqueArray(arr) {
+        return [...new Set(arr)]
     }
 
     generateTreeData(currentPath = null, level = 0) {
         const pathToExplore = currentPath || this.rootPath
 
-        if (!fs.existsSync(pathToExplore)) {
-            return []
-        }
-        if (level > this.options.buildOptions.maxDepth) {
+        if (
+            !fs.existsSync(pathToExplore) ||
+            level > this.options.buildOptions.maxDepth
+        ) {
             return []
         }
 
-        const items = fs.readdirSync(pathToExplore)
-        items.sort()
+        const items = this._getSortedItems(pathToExplore)
 
         const node = {
             name: path.basename(pathToExplore),
