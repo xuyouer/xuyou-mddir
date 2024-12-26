@@ -200,8 +200,9 @@ class Tree {
                 appendExclude: true,  // 是否追加包含
             },
         }
+        this._loadConfigFilePath(options)
         this._loadConfig()  // 读取配置
-        this._mergeConfig(options)  // 读取options
+        this._loadOptions(options)  // 读取options
     }
 
     _loadConfig() {  // 读取配置信息

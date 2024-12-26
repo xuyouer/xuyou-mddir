@@ -1,6 +1,6 @@
 {
   "name": "xuyou-mddir",
-  "version": "0.1.50",
+  "version": "0.1.51",
   "description": "Generate a directory tree in markdown format 生成项目结构树",
   "main": "index.js",
   "scripts": {

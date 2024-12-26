@@ -1,18 +1,21 @@
 const { Tree, generateTree } = require('../index')
 
+// const options = {
+//     configFilePath: '',
+//     ignoreDirs: ['node_modules', 'package.json', '__tests__', '.git'],
+//     excludeDirs: [],
+//     buildOptions: {
+//         keepIgnoredName: true,
+//         maxDepth: 5,
+//         outputFormat: 'console',
+//         showFileSize: false,
+//         showIgnoredFileSize: false,
+//         appendIgnore: false,
+//         appendExclude: false,
+//     },
+// }
 const options = {
-    configFilePath: '',
-    ignoreDirs: ['node_modules', 'package.json', '__tests__', '.git'],
-    excludeDirs: [],
-    buildOptions: {
-        keepIgnoredName: true,
-        maxDepth: 5,
-        outputFormat: 'console',
-        showFileSize: false,
-        showIgnoredFileSize: false,
-        appendIgnore: false,
-        appendExclude: false,
-    },
+    configFilePath: '.ignore.json',
 }
 
 // generateTree(__dirname)

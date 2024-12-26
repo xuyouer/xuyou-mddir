@@ -28,8 +28,9 @@ class Tree {
                 appendExclude: true,
             },
         }
+        this._loadConfigFilePath(options)
         this._loadConfig()
-        this._mergeConfig(options)
+        this._loadOptions(options)
     }
 
     _loadConfig() {
@@ -53,17 +54,36 @@ class Tree {
         return {}
     }
 
+    _loadOptions(options) {
+        if (this._emptyObject(options)) return
+        this._mergeConfig(options)
+    }
+
+    _loadConfigFilePath(options) {
+        if (this._emptyObject(options)) return
+        this.options.configFilePath =
+            options.configFilePath || this.options.configFilePath
+    }
+
     _mergeConfig(config) {
-        let { ignore, exclude, buildOptions } = config
-        ignore = ignore ? ignore : config.ignoreDirs
-        exclude = exclude ? exclude : config.excludeDirs
+        const {
+            ignoreDirs: defaultIgnoreDirs,
+            excludeDirs: defaultExcludeDirs,
+            buildOptions: defaultBuildOptions,
+        } = this.options
+        const ignore = config.ignore || config.ignoreDirs || defaultIgnoreDirs
+        const exclude =
+            config.exclude || config.excludeDirs || defaultExcludeDirs
+        const buildOptions = { ...defaultBuildOptions, ...config.buildOptions }
+        let { appendIgnore, appendExclude } = buildOptions
+
         if (ignore) {
-            this.options.ignoreDirs = config.buildOptions?.appendIgnore
+            this.options.ignoreDirs = appendIgnore
                 ? [...this.options.ignoreDirs, ...ignore]
                 : ignore
         }
         if (exclude) {
-            this.options.excludeDirs = config.buildOptions?.appendExclude
+            this.options.excludeDirs = appendExclude
                 ? [...this.options.excludeDirs, ...exclude]
                 : exclude
         }
@@ -76,6 +96,10 @@ class Tree {
 
         this.options.ignoreDirs = this._uniqueArray(this.options.ignoreDirs)
         this.options.excludeDirs = this._uniqueArray(this.options.excludeDirs)
+    }
+
+    _emptyObject(obj) {
+        return !obj || typeof obj !== 'object' || Object.keys(obj).length === 0
     }
 
     _uniqueArray(arr) {
