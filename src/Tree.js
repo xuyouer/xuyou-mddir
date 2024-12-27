@@ -1,32 +1,44 @@
 const fs = require('fs')
 const path = require('path')
+const {
+    Utils,
+    objectUtils: { emptyObject, uniqueArray },
+    fileSystemUtils: { isValidPath, getSortedItems, getFileStats },
+    sizeUtils: { formatSize, getDirSize },
+} = require('./Utils')
+const utils = new Utils()
 
 class Tree {
+    static defaultConfig = {
+        configFilePath: '.ignore.json',
+        ignoreDirs: [
+            'node_modules',
+            '.idea',
+            '.git',
+            '.vscode',
+            'build',
+            'dist',
+            '__tests__',
+            'temp',
+        ],
+        excludeDirs: [],
+        buildOptions: {
+            keepIgnoredName: false,
+            maxDepth: 5,
+            outputFormat: 'console',
+            showFileSize: false,
+            showIgnoredFileSize: false,
+            appendIgnore: true,
+            appendExclude: true,
+        },
+    }
+    static supportedOutputFormats = ['console', 'json']
+
     constructor(rootPath = process.cwd(), options = {}) {
         this.rootPath = typeof rootPath === 'string' ? rootPath : process.cwd()
         this.options = {
-            configFilePath: '.ignore.json',
-            ignoreDirs: [
-                'node_modules',
-                '.idea',
-                '.git',
-                '.vscode',
-                'build',
-                'dist',
-                '__tests__',
-                'temp',
-            ],
-            excludeDirs: [],
+            ...Tree.defaultConfig,
             projectName: path.basename(this.rootPath),
-            buildOptions: {
-                keepIgnoredName: false,
-                maxDepth: 5,
-                outputFormat: 'console',
-                showFileSize: false,
-                showIgnoredFileSize: false,
-                appendIgnore: true,
-                appendExclude: true,
-            },
         }
         this._loadConfigFilePath(options)
         this._loadConfig()
@@ -46,7 +58,6 @@ class Tree {
             console.error(`加载配置文件失败: ${error}`)
         }
 
-        // exclude 优先级高于 ignore
         this.options.ignoreDirs = this.options.ignoreDirs.filter(
             dir => !this.options.excludeDirs.includes(dir),
         )
@@ -55,12 +66,12 @@ class Tree {
     }
 
     _loadOptions(options) {
-        if (this._emptyObject(options)) return
+        if (emptyObject(options)) return
         this._mergeConfig(options)
     }
 
     _loadConfigFilePath(options) {
-        if (this._emptyObject(options)) return
+        if (emptyObject(options)) return
         this.options.configFilePath =
             options.configFilePath || this.options.configFilePath
     }
@@ -75,7 +86,7 @@ class Tree {
         const exclude =
             config.exclude || config.excludeDirs || defaultExcludeDirs
         const buildOptions = { ...defaultBuildOptions, ...config.buildOptions }
-        let { appendIgnore, appendExclude } = buildOptions
+        const { appendIgnore, appendExclude } = buildOptions
 
         if (ignore) {
             this.options.ignoreDirs = appendIgnore
@@ -94,16 +105,8 @@ class Tree {
             }
         }
 
-        this.options.ignoreDirs = this._uniqueArray(this.options.ignoreDirs)
-        this.options.excludeDirs = this._uniqueArray(this.options.excludeDirs)
-    }
-
-    _emptyObject(obj) {
-        return !obj || typeof obj !== 'object' || Object.keys(obj).length === 0
-    }
-
-    _uniqueArray(arr) {
-        return [...new Set(arr)]
+        this.options.ignoreDirs = uniqueArray(this.options.ignoreDirs)
+        this.options.excludeDirs = uniqueArray(this.options.excludeDirs)
     }
 
     generateTreeData(currentPath = null, level = 0) {
@@ -116,7 +119,7 @@ class Tree {
             return []
         }
 
-        const items = this._getSortedItems(pathToExplore)
+        const items = getSortedItems(pathToExplore)
 
         const node = {
             name: path.basename(pathToExplore),
@@ -133,7 +136,7 @@ class Tree {
                         name: item,
                         isDir: fs.lstatSync(fullPath).isDirectory(),
                         size: showSize
-                            ? this._formatSize(this._getDirSize(fullPath))
+                            ? formatSize(getDirSize(fullPath))
                             : undefined,
                     })
                 }
@@ -147,18 +150,16 @@ class Tree {
 
     _getNodeData(fullPath, level) {
         const showSize = this.options.buildOptions.showFileSize
-        const stats = this._getFileStats(fullPath)
+        const stats = getFileStats(fullPath)
         const node = {
             name: path.basename(fullPath),
             isDir: stats.isDirectory(),
         }
         if (!node.isDir && this.options.buildOptions.showFileSize) {
-            node.size = this._formatSize(stats.size)
+            node.size = formatSize(stats.size)
         }
         if (node.isDir) {
-            node.size = showSize
-                ? this._formatSize(this._getDirSize(fullPath))
-                : undefined
+            node.size = showSize ? formatSize(getDirSize(fullPath)) : undefined
             node.children = this.generateTreeData(fullPath, level + 1)
         }
         return node
@@ -168,13 +169,13 @@ class Tree {
         const pathToExplore = currentPath || this.rootPath
 
         if (
-            !this._isValidPath(pathToExplore) ||
+            !isValidPath(pathToExplore) ||
             level > this.options.buildOptions.maxDepth
         ) {
             return
         }
 
-        const items = this._getSortedItems(pathToExplore)
+        const items = getSortedItems(pathToExplore)
 
         if (level === 0 && this.options.projectName) {
             console.log(`${this.options.projectName}/`)
@@ -183,7 +184,7 @@ class Tree {
 
         items.forEach(item => {
             const fullPath = path.join(pathToExplore, item)
-            const stats = this._getFileStats(fullPath)
+            const stats = getFileStats(fullPath)
 
             if (this.options.ignoreDirs.includes(item)) {
                 if (this.options.buildOptions.keepIgnoredName) {
@@ -206,7 +207,7 @@ class Tree {
         if (stats.isDirectory()) {
             console.log(
                 `${indent}├── ${item}/    ${
-                    showSize ? this._formatSize(this._getDirSize(fullPath)) : ''
+                    showSize ? formatSize(getDirSize(fullPath)) : ''
                 }`,
             )
             console.log(`${indent}│   └── ...`)
@@ -214,7 +215,7 @@ class Tree {
         } else {
             console.log(
                 `${indent}├── ${item}    ${
-                    showSize ? this._formatSize(stats.size) : ''
+                    showSize ? formatSize(stats.size) : ''
                 }`,
             )
         }
@@ -227,7 +228,7 @@ class Tree {
         if (stats.isDirectory()) {
             console.log(
                 `${indent}├── ${item}/    ${
-                    showSize ? this._formatSize(this._getDirSize(fullPath)) : ''
+                    showSize ? formatSize(getDirSize(fullPath)) : ''
                 }`,
             )
             this.generateTree(fullPath, level + 1)
@@ -239,7 +240,7 @@ class Tree {
         } else {
             console.log(
                 `${indent}├── ${item}    ${
-                    showSize ? this._formatSize(stats.size) : ''
+                    showSize ? formatSize(stats.size) : ''
                 }`,
             )
         }
@@ -247,82 +248,26 @@ class Tree {
 
     generateTree(currentPath = null, level = 0) {
         const { outputFormat } = this.options.buildOptions
-
-        if (outputFormat === 'console') {
-            this.generateTreeConsole(currentPath, level)
-        } else if (outputFormat === 'json') {
-            const treeData = this.generateTreeData()
-            console.log(JSON.stringify(treeData, null, 2))
-        } else {
-            console.warn(
-                `不支持的输出格式: ${outputFormat}, 使用默认输出格式: console`,
-            )
-            this.generateTreeConsole(currentPath, level)
+        if (!Tree.supportedOutputFormats.includes(outputFormat)) {
+            throw new Error(`不支持的输出格式: ${outputFormat}`)
         }
-    }
-
-    _isValidPath(pathToExplore) {
-        try {
-            fs.accessSync(pathToExplore)
-            return true
-        } catch (err) {
-            console.error(`路径 '${pathToExplore}' 不存在`)
-            return false
+        const generateMethods = {
+            console: this.generateTreeConsole.bind(this),
+            json: () =>
+                console.log(JSON.stringify(this.generateTreeData(), null, 2)),
         }
-    }
-
-    _getSortedItems(pathToExplore) {
-        return fs.readdirSync(pathToExplore).sort()
-    }
-
-    _getFileStats(fullPath) {
-        return fs.statSync(fullPath)
-    }
-
-    _formatSize(bytes) {
-        if (bytes === 0) return '0 B'
-        const sizes = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
-        const i = Math.floor(Math.log(bytes) / Math.log(1024))
-        return (
-            parseFloat((bytes / Math.pow(1024, i)).toFixed(2)) + ' ' + sizes[i]
-        )
-    }
-
-    _getDirSize(dirPath) {
-        const stats = this._getFileStats(dirPath)
-        if (!stats.isDirectory()) {
-            return stats.size
-        }
-
-        let totalSize = 0
-        const files = fs.readdirSync(dirPath)
-        // files.forEach(file => {
-        //     const fullFilePath = path.join(dirPath, file)
-        //     const fileStats = this._getFileStats(fullFilePath)
-        //     if (fileStats.isDirectory()) {
-        //         totalSize += this._getDirSize(fullFilePath)
-        //     } else {
-        //         totalSize += fileStats.size
-        //     }
-        // })
-        totalSize = files.reduce((ac, file) => {
-            const fullFilePath = path.join(dirPath, file)
-            const fileStats = this._getFileStats(fullFilePath)
-            return (
-                ac +
-                (fileStats.isDirectory()
-                    ? this._getDirSize(fullFilePath)
-                    : fileStats.size)
-            )
-        }, 0)
-        return totalSize
+        generateMethods[outputFormat](currentPath, level)
     }
 }
 
 module.exports = {
     Tree,
-    generateTree: (rootPath, options = {}) => {
-        const tree = new Tree(rootPath, options)
-        tree.generateTree()
-    },
+    generateTree: (rootPath, options = {}) =>
+        new Tree(rootPath, options).generateTree(),
+    ...Tree.defaultConfig,
+    defaultConfigFilePath: Tree.defaultConfig.configFilePath,
+    defaultIgnoreDirs: Tree.defaultConfig.ignoreDirs,
+    defaultExcludeDirs: Tree.defaultConfig.excludeDirs,
+    defaultBuildOptions: Tree.defaultConfig.buildOptions,
+    supportedOutputFormats: Tree.supportedOutputFormats,
 }

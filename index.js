@@ -1,4 +1,12 @@
-const { Tree, generateTree } = require('./src/Tree')
+const {
+    Tree,
+    generateTree,
+    defaultConfigFilePath,
+    defaultIgnoreDirs,
+    defaultExcludeDirs,
+    defaultBuildOptions,
+    supportedOutputFormats,
+} = require('./src/Tree')
 const { program } = require('commander')
 const fs = require('fs')
 const { parse } = require('json5')
@@ -10,7 +18,9 @@ if (require.main === module) {
             'Generate a directory tree in markdown format 生成项目结构树',
         )
         .option('-r, --root <path>', 'Root directory 项目目录路径')
-        .option('-o, --options <options>', 'Options config {...}', (value) => parse(value))
+        .option('-o, --options <options>', 'Options config {...}', value =>
+            parse(value),
+        )
         .parse(process.argv)
 
     let { root, options = {} } = program.opts()
@@ -29,4 +39,9 @@ if (require.main === module) {
 module.exports = {
     Tree,
     generateTree,
+    defaultConfigFilePath,
+    defaultIgnoreDirs,
+    defaultExcludeDirs,
+    defaultBuildOptions,
+    supportedOutputFormats,
 }

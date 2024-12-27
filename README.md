@@ -4,6 +4,10 @@
 
 [https://github.com/xuyouer/xuyou-mddir](https://github.com/xuyouer/xuyou-mddir)
 
+## NPM
+
+[https://www.npmjs.com/package/xuyou-mddir](https://www.npmjs.com/package/xuyou-mddir)
+
 ## 安装
 
 ```shell
@@ -46,6 +50,7 @@ xuyou-mddir/
 ├── pnpm-lock.yaml
 ├── src/
 │   ├── Tree.js
+│   ├── Utils.js
 │   └── ...
 │
 └── ...
@@ -91,20 +96,13 @@ xuyou-mddir/
 ### 调用方法使用
 
 ```js
+// test.js
 const {Tree, generateTree} = require('xuyou-mddir')
 
 const options = {
-    configFilePath: '',
-    ignoreDirs: ['node_modules', 'package.json', '__tests__', '.git'],
-    excludeDirs: [],
+    configFilePath: '.ignore.json',
     buildOptions: {
         keepIgnoredName: true,
-        maxDepth: 5,
-        outputFormat: 'console',
-        showFileSize: false,
-        showIgnoredFileSize: false,
-        appendIgnore: false,
-        appendExclude: false,
     },
 }
 
@@ -140,9 +138,31 @@ xuyou-mddir/
 ├── pnpm-lock.yaml
 ├── src/
 │   ├── Tree.js
+│   ├── Utils.js
 │   └── ...
 │
 └── ...
+```
+
+## 默认配置
+
+### 获取
+
+```js
+// test.js
+const {
+    defaultConfigFilePath,
+    defaultIgnoreDirs,
+    defaultExcludeDirs,
+    defaultBuildOptions,
+    supportedOutputFormats,
+} = require('xuyou-mddir')
+
+console.log(defaultConfigFilePath)
+console.log(defaultIgnoreDirs)
+console.log(defaultExcludeDirs)
+console.log(defaultBuildOptions)
+console.log(supportedOutputFormats)
 ```
 
 ## 解析
@@ -156,7 +176,7 @@ xuyou-mddir/
   "buildOptions" : {                    # 生成配置选项
     "keepIgnoredName": Boolean,         # 忽略文件(目录)是否保留名称, 默认 false
     "maxDepth": Number,                 # 树的生成最大深度, 默认 5
-    "outputFormat": "console",          # 输出格式选项, 默认 console
+    "outputFormat": String,             # 输出格式选项, 默认 console
     "showFileSize": Boolean,            # 显示文件(目录)大小, 默认 false
     "showIgnoredFileSize": Boolean,     # 显示忽略文件(目录)大小, 默认 false
     "appendIgnore": Boolean,            # 是否追加忽略模式, 默认 true
@@ -174,31 +194,36 @@ xuyou-mddir/
 ...
 
 class Tree {
+    static defaultConfig = {  // 默认配置
+        configFilePath: '.ignore.json',  // 配置文件路径
+        ignoreDirs: [  // 忽略配置
+            'node_modules',
+            '.idea',
+            '.git',
+            '.vscode',
+            'build',
+            'dist',
+            '__tests__',
+            'temp',
+        ],
+        excludeDirs: [],  // 包含配置
+        buildOptions: {  // 生成配置
+            keepIgnoredName: false,  // 忽略是否保留名称
+            maxDepth: 5,  // 树的生成最大深度
+            outputFormat: 'console',,  // 输出方式
+            showFileSize: false,  // 显示文件大小
+            showIgnoredFileSize: false,  // 显示忽略文件大小
+            appendIgnore: true,  // 是否追加忽略
+            appendExclude: true,  // 是否追加包含
+        },
+    }
+    static supportedOutputFormats = ['console', 'json']  // 支持的输出格式
+
     constructor(rootPath = process.cwd(), options = {}) {
         this.rootPath = typeof rootPath === 'string' ? rootPath : process.cwd()  // 项目路径
-        this.options = {  // 配置
-            configFilePath: '.ignore.json',  // 配置文件路径
-            ignoreDirs: [  // 忽略配置
-                'node_modules',
-                '.idea',
-                '.git',
-                '.vscode',
-                'build',
-                'dist',
-                '__tests__',
-                'temp',
-            ],
-            excludeDirs: [],  // 取消忽略配置
+        this.options = {
+            ...Tree.defaultConfig,
             projectName: path.basename(this.rootPath),  // 项目名
-            buildOptions: {  // 生成配置
-                keepIgnoredName: false,  // 忽略是否保留名称
-                maxDepth: 5,  // 树的生成最大深度
-                outputFormat: 'console',  // 输出方式
-                showFileSize: false,  // 显示文件大小
-                showIgnoredFileSize: false,  // 显示忽略文件大小
-                appendIgnore: true,  // 是否追加忽略
-                appendExclude: true,  // 是否追加包含
-            },
         }
         this._loadConfigFilePath(options)
         this._loadConfig()  // 读取配置
@@ -206,10 +231,6 @@ class Tree {
     }
 
     _loadConfig() {  // 读取配置信息
-        ...
-    }
-
-    _mergeConfig(config) {
         ...
     }
 
