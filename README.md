@@ -40,7 +40,7 @@ xuyou-mddir/
 │
 ├── .gitattributes
 ├── .gitignore
-├── .ignore.json
+├── .mddirignore
 ├── .npmrc
 ├── LICENSE
 ├── README.md
@@ -60,37 +60,32 @@ xuyou-mddir/
 
 ### 添加配置
 
-> 在项目根目录创建 `.ignore.json` 文件
+> 在项目根目录创建 `.mddirignore` 文件
 >
-> create `.ignore.json` or other name file in root directory
+> create `.mddirignore` or other name file in root directory
 >
-> default configuration file name is `.ignore.json`
+> default configuration file name is `.mddirignore`
 
-```json
-{
-  "ignore": [
-    "node_modules",
-    ".git",
-    ".idea",
-    ".vscode",
-    "build",
-    "dist",
-    "__tests__",
-    "temp"
-  ],
-  "exclude": [
-    ".gitignore"
-  ],
-  "buildOptions": {
-    "keepIgnoredName": false,
-    "maxDepth": 5,
-    "outputFormat": "console",
-    "showFileSize": false,
-    "showIgnoredFileSize": false,
-    "appendIgnore": true,
-    "appendExclude": true
-  }
-}
+```yaml
+ignore:
+  - node_modules
+  - .git
+  - .idea
+  - .vscode
+  - build
+  - __tests__
+  - temp
+include: []
+exclude: []
+build:
+  keepIgnoredName: false
+  maxDepth: 5
+  outputFormat: console
+  showFileSize: false
+  showIgnoredFileSize: false
+  appendIgnore: true
+  appendInclude: true
+  appendExclude: true
 ```
 
 ### 调用方法使用
@@ -100,7 +95,8 @@ xuyou-mddir/
 const {Tree, generateTree} = require('xuyou-mddir')
 
 const options = {
-    configFilePath: '.ignore.json',
+    configFilePath: '.mddirignore',
+    include: ['__tests__'],
     buildOptions: {
         keepIgnoredName: true,
     },
@@ -122,11 +118,12 @@ xuyou-mddir/
 │
 ├── .gitattributes
 ├── .gitignore
-├── .ignore.json
+├── .mddirignore
 ├── .npmrc
 ├── LICENSE
 ├── README.md
 ├── __tests__/
+│   ├── test.js
 │   └── ...
 │
 ├── index.js
@@ -153,6 +150,7 @@ xuyou-mddir/
 const {
     defaultConfigFilePath,
     defaultIgnoreDirs,
+    defaultIncludeDirs,
     defaultExcludeDirs,
     defaultBuildOptions,
     supportedOutputFormats,
@@ -160,6 +158,7 @@ const {
 
 console.log(defaultConfigFilePath)
 console.log(defaultIgnoreDirs)
+console.log(defaultIncludeDirs)
 console.log(defaultExcludeDirs)
 console.log(defaultBuildOptions)
 console.log(supportedOutputFormats)
@@ -172,15 +171,17 @@ console.log(supportedOutputFormats)
 ```jsonc
 {
   "ignore": ['customIgnore'],           # 忽略文件(目录)
-  "exclude": ['customExclude'],         # 取消忽略文件(目录)
+  "include": ['customInclude'],         # 包含文件(目录)
+  "exclude": ['customExclude'],         # 排除文件(目录)
   "buildOptions" : {                    # 生成配置选项
     "keepIgnoredName": Boolean,         # 忽略文件(目录)是否保留名称, 默认 false
     "maxDepth": Number,                 # 树的生成最大深度, 默认 5
     "outputFormat": String,             # 输出格式选项, 默认 console
     "showFileSize": Boolean,            # 显示文件(目录)大小, 默认 false
     "showIgnoredFileSize": Boolean,     # 显示忽略文件(目录)大小, 默认 false
-    "appendIgnore": Boolean,            # 是否追加忽略模式, 默认 true
-    "appendExclude": Boolean,           # 是否追加包含模式, 默认 true
+    "appendIgnore": Boolean,            # 追加忽略模式, 默认 true
+    "appendInclude": Boolean,           # 追加包含模式, 默认 true
+    "appendExclude": Boolean,           # 追加排除模式, 默认 true
     ...
   }
   ...
@@ -189,32 +190,33 @@ console.log(supportedOutputFormats)
 
 ### 部分方法参数解析
 
-```text
+```
 // Tree.js
 ...
 
 class Tree {
     static defaultConfig = {  // 默认配置
-        configFilePath: '.ignore.json',  // 配置文件路径
+        configFilePath: '.mddirignore',  // 配置文件路径
         ignoreDirs: [  // 忽略配置
             'node_modules',
             '.idea',
             '.git',
             '.vscode',
             'build',
-            'dist',
             '__tests__',
             'temp',
         ],
-        excludeDirs: [],  // 包含配置
+        includeDirs: [],  // 包含配置
+        excludeDirs: [],  // 排除配置
         buildOptions: {  // 生成配置
             keepIgnoredName: false,  // 忽略是否保留名称
             maxDepth: 5,  // 树的生成最大深度
-            outputFormat: 'console',,  // 输出方式
+            outputFormat: 'console',  // 输出方式
             showFileSize: false,  // 显示文件大小
             showIgnoredFileSize: false,  // 显示忽略文件大小
-            appendIgnore: true,  // 是否追加忽略
-            appendExclude: true,  // 是否追加包含
+            appendIgnore: true,  // 追加忽略
+            appendInclude: true,  // 追加包含
+            appendExclude: true,  // 追加排除
         },
     }
     static supportedOutputFormats = ['console', 'json']  // 支持的输出格式

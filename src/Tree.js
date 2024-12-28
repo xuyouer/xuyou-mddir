@@ -2,25 +2,29 @@ const fs = require('fs')
 const path = require('path')
 const {
     Utils,
-    objectUtils: { emptyObject, uniqueArray },
-    fileSystemUtils: { isValidPath, getSortedItems, getFileStats },
+    objectUtils: { emptyObject, uniqueArray, mergeArray },
+    fileSystemUtils: {
+        isValidPath,
+        getSortedItems,
+        getFileStats,
+        parseYamlFile,
+    },
     sizeUtils: { formatSize, getDirSize },
 } = require('./Utils')
-const utils = new Utils()
 
 class Tree {
     static defaultConfig = {
-        configFilePath: '.ignore.json',
+        configFilePath: '.mddirignore',
         ignoreDirs: [
             'node_modules',
             '.idea',
             '.git',
             '.vscode',
             'build',
-            'dist',
             '__tests__',
             'temp',
         ],
+        includeDirs: [],
         excludeDirs: [],
         buildOptions: {
             keepIgnoredName: false,
@@ -29,6 +33,7 @@ class Tree {
             showFileSize: false,
             showIgnoredFileSize: false,
             appendIgnore: true,
+            appendInclude: true,
             appendExclude: true,
         },
     }
@@ -47,21 +52,10 @@ class Tree {
 
     _loadConfig() {
         const configFilePath = this.options.configFilePath
-        try {
-            if (fs.existsSync(configFilePath)) {
-                const config = JSON.parse(
-                    fs.readFileSync(configFilePath, 'utf-8'),
-                )
-                this._mergeConfig(config)
-            }
-        } catch (error) {
-            console.error(`加载配置文件失败: ${error}`)
+        if (fs.existsSync(configFilePath)) {
+            const config = parseYamlFile(configFilePath)
+            this._mergeConfig(config)
         }
-
-        this.options.ignoreDirs = this.options.ignoreDirs.filter(
-            dir => !this.options.excludeDirs.includes(dir),
-        )
-
         return {}
     }
 
@@ -79,34 +73,69 @@ class Tree {
     _mergeConfig(config) {
         const {
             ignoreDirs: defaultIgnoreDirs,
+            includeDirs: defaultIncludeDirs,
             excludeDirs: defaultExcludeDirs,
             buildOptions: defaultBuildOptions,
         } = this.options
-        const ignore = config.ignore || config.ignoreDirs || defaultIgnoreDirs
-        const exclude =
-            config.exclude || config.excludeDirs || defaultExcludeDirs
-        const buildOptions = { ...defaultBuildOptions, ...config.buildOptions }
-        const { appendIgnore, appendExclude } = buildOptions
 
-        if (ignore) {
-            this.options.ignoreDirs = appendIgnore
-                ? [...this.options.ignoreDirs, ...ignore]
-                : ignore
+        const buildOptions = {
+            ...defaultBuildOptions,
+            ...(config?.build || config?.buildOptions),
         }
-        if (exclude) {
-            this.options.excludeDirs = appendExclude
-                ? [...this.options.excludeDirs, ...exclude]
-                : exclude
+        const mergedConfig = {
+            ignoreDirs: uniqueArray(
+                mergeArray(
+                    defaultIgnoreDirs,
+                    config?.ignore || config?.ignoreDirs || defaultIgnoreDirs,
+                    buildOptions?.appendIgnore,
+                ),
+            ),
+            includeDirs: uniqueArray(
+                mergeArray(
+                    defaultIncludeDirs,
+                    config?.include ||
+                        config?.includeDirs ||
+                        defaultIncludeDirs,
+                    buildOptions?.appendInclude,
+                ),
+            ),
+            excludeDirs: uniqueArray(
+                mergeArray(
+                    defaultExcludeDirs,
+                    config?.exclude ||
+                        config?.excludeDirs ||
+                        defaultExcludeDirs,
+                    buildOptions?.appendExclude,
+                ),
+            ),
+            buildOptions: {
+                ...defaultBuildOptions,
+                ...(config?.build || config?.buildOptions),
+            },
         }
-        if (buildOptions) {
-            this.options.buildOptions = {
-                ...this.options.buildOptions,
-                ...buildOptions,
-            }
+        this.options = {
+            ...this.options,
+            ...mergedConfig,
         }
 
-        this.options.ignoreDirs = uniqueArray(this.options.ignoreDirs)
-        this.options.excludeDirs = uniqueArray(this.options.excludeDirs)
+        // const ignore = config?.ignore || config?.ignoreDirs || defaultIgnoreDirs
+        // const include = config?.include || config?.includeDirs || defaultIncludeDirs
+        // const exclude = config?.exclude || config?.excludeDirs || defaultExcludeDirs
+        // const buildOptions = { ...defaultBuildOptions, ...(config?.build || config?.buildOptions), }
+        // const { appendIgnore, appendInclude, appendExclude } = buildOptions
+        // if (ignore) {
+        //     // this.options.ignoreDirs = appendIgnore ? [...defaultIgnoreDirs, ...ignore] : ignore
+        //     this.options.ignoreDirs = mergeArray( defaultIgnoreDirs, ignore, appendIgnore, ) }
+        // if (include) { this.options.includeDirs = mergeArray( defaultIncludeDirs, include, appendInclude, ) }
+        // if (exclude) { this.options.excludeDirs = mergeArray( defaultExcludeDirs, exclude, appendExclude, ) }
+        // if (buildOptions) { this.options.buildOptions = { ...defaultBuildOptions, ...buildOptions, } }
+        // this.options.ignoreDirs = uniqueArray(this.options.ignoreDirs)
+        // this.options.includeDirs = uniqueArray(this.options.includeDirs)
+        // this.options.excludeDirs = uniqueArray(this.options.excludeDirs)
+
+        this.options.ignoreDirs = this.options.ignoreDirs.filter(
+            dir => !this.options.includeDirs.includes(dir),
+        )
     }
 
     generateTreeData(currentPath = null, level = 0) {
@@ -267,6 +296,7 @@ module.exports = {
     ...Tree.defaultConfig,
     defaultConfigFilePath: Tree.defaultConfig.configFilePath,
     defaultIgnoreDirs: Tree.defaultConfig.ignoreDirs,
+    defaultIncludeDirs: Tree.defaultConfig.includeDirs,
     defaultExcludeDirs: Tree.defaultConfig.excludeDirs,
     defaultBuildOptions: Tree.defaultConfig.buildOptions,
     supportedOutputFormats: Tree.supportedOutputFormats,

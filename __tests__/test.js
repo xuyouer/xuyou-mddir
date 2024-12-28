@@ -3,6 +3,7 @@ const {
     generateTree,
     defaultConfigFilePath,
     defaultIgnoreDirs,
+    defaultIncludeDirs,
     defaultExcludeDirs,
     defaultBuildOptions,
     supportedOutputFormats,
@@ -10,9 +11,11 @@ const {
 // } = require('xuyou-mddir')
 
 const options = {
-    configFilePath: '.ignore.json',
-    buildOptions: {
-        keepIgnoredName: true,
+    configFilePath: '.mddirignore',
+    // ignore: ['node_modules', '.git'],
+    include: ['__tests__'],
+    build: {
+        keepIgnoredName: false,
     },
 }
 

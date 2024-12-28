@@ -1,0 +1,19 @@
+ignore:
+  - node_modules
+  - .git
+  - .idea
+  - .vscode
+  - build
+  - __tests__
+  - temp
+include: []
+exclude: []
+build:
+  keepIgnoredName: false
+  maxDepth: 5
+  outputFormat: console
+  showFileSize: false
+  showIgnoredFileSize: false
+  appendIgnore: true
+  appendInclude: true
+  appendExclude: true

@@ -1,6 +1,6 @@
 {
   "name": "xuyou-mddir",
-  "version": "0.1.60",
+  "version": "0.1.61",
   "description": "Generate a directory tree in markdown format 生成项目结构树",
   "main": "index.js",
   "scripts": {
@@ -22,6 +22,7 @@
   "license": "MIT",
   "dependencies": {
     "commander": "^12.1.0",
+    "js-yaml": "^4.1.0",
     "json5": "^2.2.3"
   },
   "bin": {
